@@ -64,23 +64,20 @@ module PartBCase2 =
             mark <= 100.0 && mark >= 0.0
 
         let getClassification classifcations mark =
-            if mark >= 70.0 && classifcations.Bound70.IsSome then Ok <| classifcations.Bound70.Value
-            elif mark >= 60.0 && classifcations.Bound60.IsSome then Ok <| classifcations.Bound60.Value
-            elif mark >= 50.0 && classifcations.Bound50.IsSome then Ok <| classifcations.Bound50.Value
-            elif mark >= 40.0 && classifcations.Bound40.IsSome then Ok <| classifcations.Bound40.Value
-            elif classifcations.Bound0.IsSome then Ok <| classifcations.Bound0.Value
+            if mark >= 70.0 && classifcations.Bound70.IsSome then Ok classifcations.Bound70.Value
+            elif mark >= 60.0 && classifcations.Bound60.IsSome then Ok classifcations.Bound60.Value
+            elif mark >= 50.0 && classifcations.Bound50.IsSome then Ok classifcations.Bound50.Value
+            elif mark >= 40.0 && classifcations.Bound40.IsSome then Ok classifcations.Bound40.Value
+            elif classifcations.Bound0.IsSome then Ok classifcations.Bound0.Value
             else Error <| sprintf "Error getting classification"
 
         match course with
         | "MEng" when validMark mark -> 
-            let classifications = mEngClassifications
-            getClassification classifications mark 
+            getClassification mEngClassifications mark 
         | "BEng" when validMark mark -> 
-            let classifications = bEngClassifications
-            getClassification classifications mark 
+            getClassification bEngClassifications mark 
         | "MSc" when validMark mark -> 
-            let classifications = mScClassifications
-            getClassification classifications mark 
+            getClassification mScClassifications mark 
         | "MEng"  | "BEng" | "MSc" -> 
             Error <| sprintf "Mark: %f not between 0 and 100" mark
         | _ -> Error <| sprintf "Degree course does not exist"
@@ -94,7 +91,27 @@ module PartBCase3 =
     /// Return as a Ok string the name of the correct classification for a studen on given course with given mark.
     /// Return Error if course or mark are not possible (marks must be in range 100 - 0). The error message should say what the problem in the data was.
     let classify (course: string) (mark: float) : Result<string,string> =
-        failwithf "Not implemented yet"
+
+        let validMark mark = 
+            mark <= 100.0 && mark >= 0.0
+
+        let getClassification boundaries mark =
+            let element = boundaries |> List.tryFind (fun (_,x) -> (mark > float x))
+            if element.IsSome
+            then Ok <| fst element.Value
+            else Error <| sprintf "Mark does not condone to any boundaries" 
+
+        match course with
+        | "MEng" when validMark mark -> 
+            getClassification mEngBoundaries mark 
+        | "BEng" when validMark mark -> 
+            getClassification bEngBoundaries mark 
+        | "MSc" when validMark mark -> 
+            getClassification mScBoundaries mark 
+        | "MEng"  | "BEng" | "MSc" -> 
+            Error <| sprintf "Mark: %f not between 0 and 100" mark
+        | _ -> Error <| sprintf "Degree course does not exist"
+
 
 //------------------------------------Tick2 PartC skeleton code-----------------------------------//
 
