@@ -4,16 +4,50 @@ module Tick2
 
 
 module PartACase1 =
-    () // dummy value to make submodule non-empty
     // Three record types, one data value of each type. Choose suitable names.
+    type MEngClassifications = {First:int; UpperSecond:int; LowerSecond:int; Fail:int;}
+    type BEngClassifications = {First:int; UpperSecond:int; LowerSecond:int; Third:int; Fail:int;}
+    type MScClassifications = {Distinction:int; Merit:int; Pass:int; Fail:int;}
+    let mEngBoundaries = {First = 70; UpperSecond = 60; LowerSecond = 50; Fail = 0}
+    let bEngBoundaries = {First=70; UpperSecond = 60; LowerSecond = 50; Third = 40; Fail = 0}
+    let mScBoundaries = {Distinction = 70; Merit = 60; Pass = 50; Fail = 0}
 
 module PartACase2 =
-    () // dummy value to make submodule non-empty
     // One record type, three data values of this type. Choose suitable names.
+    type ClassificationAtBoundary= {
+        Bound70: string option; 
+        Bound60: string option; 
+        Bound50: string option; 
+        Bound40: string option; 
+        Bound0: string option;}
+
+    let mEngClassifications = {
+        Bound70 = Some"First"; 
+        Bound60 = Some"UpperSecond"; 
+        Bound50 = Some"LowerSecond"; 
+        Bound40 = None; 
+        Bound0 = Some"Fail"}
+        
+    let bEngClassifications = {
+        Bound70 = Some"First"; 
+        Bound60 = Some"UpperSecond"; 
+        Bound50 = Some"LowerSecond"; 
+        Bound40 = Some"Third"; 
+        Bound0 = Some"Fail"}
+    
+    let mScClassifications = {
+        Bound70 = Some"Distinction"; 
+        Bound60 = Some"Merit"; 
+        Bound50 = Some"Pass"; 
+        Bound40 = None; 
+        Bound0 = Some"Fail";}
 
 module PartACase3 =
-    () // dummy value to make submodule non-empty
     // One type, three data values of this type. Choose suitable names.
+    type BoundaryClassificationList = (string*int) list
+    let mEngBoundaries = ["First",70; "UpperSecond", 60; "LowerSecond",50; "Fail",0]
+    let bEngBoundaries = ["First",70; "UpperSecond",60; "LowerSecond",50; "Third",40; "Fail",0]
+    let mScBoundaries = ["Distinction",70; "Merit",60; "Pass",50; "Fail",0]
 
 //---------------------------Tick2 PartB case 2 skeleton code-------------------------------//
 
@@ -26,7 +60,30 @@ module PartBCase2 =
     /// Return Error if course or mark are not possible (marks must be in range 100 - 0). 
     /// The error message should say what the problem in the data was.
     let classify (course: string) (mark: float) : Result<string,string> =
-        failwithf "Not implemented yet"
+        let validMark mark = 
+            mark <= 100.0 && mark >= 0.0
+
+        let getClassification classifcations mark =
+            if mark >= 70.0 && classifcations.Bound70.IsSome then Ok <| classifcations.Bound70.Value
+            elif mark >= 60.0 && classifcations.Bound60.IsSome then Ok <| classifcations.Bound60.Value
+            elif mark >= 50.0 && classifcations.Bound50.IsSome then Ok <| classifcations.Bound50.Value
+            elif mark >= 40.0 && classifcations.Bound40.IsSome then Ok <| classifcations.Bound40.Value
+            elif classifcations.Bound0.IsSome then Ok <| classifcations.Bound0.Value
+            else Error <| sprintf "Error getting classification"
+
+        match course with
+        | "MEng" when validMark mark -> 
+            let classifications = mEngClassifications
+            getClassification classifications mark 
+        | "BEng" when validMark mark -> 
+            let classifications = bEngClassifications
+            getClassification classifications mark 
+        | "MSc" when validMark mark -> 
+            let classifications = mScClassifications
+            getClassification classifications mark 
+        | "MEng"  | "BEng" | "MSc" -> 
+            Error <| sprintf "Mark: %f not between 0 and 100" mark
+        | _ -> Error <| sprintf "Degree course does not exist"
 
 //---------------------------Tick2 PartB case 3 skeleton code-------------------------------//
 
@@ -116,6 +173,12 @@ module TestClassify =
         "BEng", 35.0, Ok "Fail"        
     ]
 
+    let printResult res = 
+        match res with
+        | Ok s -> sprintf "Ok %s" s
+        | Error s -> sprintf "Error %s" s
+
+
     let runClassifyTests unitTests classify testName =
         unitTests
         |> List.map (fun (data as (course,mark,_)) -> classify course mark, data)
@@ -125,8 +188,8 @@ module TestClassify =
             | fails -> 
                 fails 
                 |> List.iter (fun (actual, (course,mark,className)) 
-                                -> printfn $"Test Failed: {course}, {mark}, expected className={className}, \
-                                          actual className={actual}")
+                                -> printfn $"Test Failed: {course}, {mark}, expected className={printResult className}, \
+                                          actual className={printResult actual}")
 
 
 //-------------------------------------------------------------------------------------------//
