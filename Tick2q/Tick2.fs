@@ -69,7 +69,7 @@ module PartBCase2 =
             elif mark >= 50.0 && classifcations.Bound50.IsSome then Ok classifcations.Bound50.Value
             elif mark >= 40.0 && classifcations.Bound40.IsSome then Ok classifcations.Bound40.Value
             elif classifcations.Bound0.IsSome then Ok classifcations.Bound0.Value
-            else Error <| sprintf "Error getting classification"
+            else Error <| sprintf "Error getting degree classification"
 
         match course with
         | "MEng" when validMark mark -> 
@@ -99,7 +99,7 @@ module PartBCase3 =
             let element = boundaries |> List.tryFind (fun (_,x) -> (mark > float x))
             if element.IsSome
             then Ok <| fst element.Value
-            else Error <| sprintf "Mark does not condone to any boundaries" 
+            else Error <| sprintf "Error getting degree classification" 
 
         match course with
         | "MEng" when validMark mark -> 
@@ -169,7 +169,34 @@ module PartC =
             // Return Ok classname or an error if there is any error.
             // (option and error returns ignored in above comments, must be dealt with)
 
-        failwithf "Not implemented" // replace by your code ()
+        let totalMark = markTotal marks course
+        if totalMark.IsNone 
+        then Error <| sprintf "Error getting mark: Degree course does not exist or mark not in valid range"
+        else 
+            let getUplift boundary = upliftFunc marks boundary course
+
+            let upLift =
+                let upLiftResultOption = 
+                    boundaries 
+                    |> List.map (getUplift)   
+                    |> List.tryFind (
+                        function 
+                        | Error e -> false
+                        | Ok x -> x.Uplift.IsSome
+                        ) 
+                if upLiftResultOption.IsSome
+                    then 
+                        upLiftResultOption.Value
+                        |> function 
+                        | Error e -> 0.0
+                        | Ok up -> up.Uplift.Value
+                else 0.0 
+            
+            let effectiveMark = totalMark.Value + upLift
+
+            let className = classify course effectiveMark
+
+            className
 
 //------------------------------Simple test data and functions---------------------------------//
 module TestClassify =
