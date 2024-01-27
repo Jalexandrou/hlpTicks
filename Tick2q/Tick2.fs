@@ -176,27 +176,17 @@ module PartC =
             let getUplift boundary = upliftFunc marks boundary course
 
             let upLift =
-                let upLiftResultOption = 
                     boundaries 
                     |> List.map (getUplift)   
-                    |> List.tryFind (
-                        function 
-                        | Error e -> false
-                        | Ok x -> x.Uplift.IsSome
-                        ) 
-                if upLiftResultOption.IsSome
-                    then 
-                        upLiftResultOption.Value
-                        |> function 
-                        | Error e -> 0.0
-                        | Ok up -> up.Uplift.Value
-                else 0.0 
+                    |> List.tryPick (fun x -> 
+                            match x with  
+                            | Error _ -> None
+                            | Ok x -> x.Uplift)
+                    |> Option.defaultValue 0.0 
             
-            let effectiveMark = totalMark.Value + upLift
+            let effectiveMark = totalMark.Value + upLift   
 
-            let className = classify course effectiveMark
-
-            className
+            classify course effectiveMark    
 
 //------------------------------Simple test data and functions---------------------------------//
 module TestClassify =
@@ -259,4 +249,16 @@ module PartX =
         lensMap lensC fc >> lensMap lensB fb
 
     let combineLens (l1: Lens<'A,'B>) (l2: Lens<'B,'C>) : Lens<'A,'C> =
-        failwithf "not implemented yet" // replace with your definition
+        let getBFromA, putBinA = l1
+        let getCFromB, putCinB = l2
+        
+        let getc (a: 'A) =
+            let b = getBFromA a
+            getCFromB b
+        
+        let putc (c: 'C) (a: 'A) = 
+            let b = getBFromA a
+            let b' = putCinB c b
+            putBinA b' a 
+                   
+        (getc, putc)
