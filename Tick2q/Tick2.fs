@@ -170,23 +170,30 @@ module PartC =
             // (option and error returns ignored in above comments, must be dealt with)
 
         let totalMark = markTotal marks course
+
         if totalMark.IsNone 
-        then Error <| sprintf "Error getting mark: Degree course does not exist or mark not in valid range"
+            then Error <| sprintf "Error getting mark: Degree course does not exist or mark not in valid range"
         else 
             let getUplift boundary = upliftFunc marks boundary course
 
-            let upLift =
+            let upLifts =
                     boundaries 
-                    |> List.map (getUplift)   
-                    |> List.tryPick (fun x -> 
-                            match x with  
-                            | Error _ -> None
-                            | Ok x -> x.Uplift)
-                    |> Option.defaultValue 0.0 
-            
-            let effectiveMark = totalMark.Value + upLift   
+                    |> List.map (getUplift)  
 
-            classify course effectiveMark    
+            if upLifts |> List.exists Result.isError
+                then Error <| sprintf "Boundaries provided not valid for course"
+            else 
+                let upLift =    
+                        upLifts
+                        |> List.tryPick (fun x -> 
+                            match x with  
+                            | Ok x -> x.Uplift
+                            | Error _ -> None)
+                        |> Option.defaultValue 0.0 
+            
+                let effectiveMark = totalMark.Value + upLift  
+
+                classify course effectiveMark    
 
 //------------------------------Simple test data and functions---------------------------------//
 module TestClassify =
